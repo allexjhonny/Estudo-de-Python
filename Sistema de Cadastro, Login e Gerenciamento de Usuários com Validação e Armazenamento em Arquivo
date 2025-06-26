@@ -1,0 +1,109 @@
+import os
+from getpass import getpass
+
+usuario = {}
+
+#Carrega os usuarios salvos no arquivo
+try: #Teste de erro, se caso não funcionar, executar o except
+    with open('usuarios.txt', 'r') as arquivo: #aqui abre e lê os arquivos
+        linhas = arquivo.readlines()
+        for linha in linhas:
+            nome, senha = linha.strip().split(':')
+            usuario[nome] = senha
+except FileNotFoundError: #aqui é ativado caso não funcione o try
+    with open('usuarios.txt', 'w') as arquivos: # aqui abre e escreve nos arquivos
+        pass
+
+#Aqui ele verifica se a senha tem todos os requisitos
+def validar_senha(senha):
+    
+    if len(senha) < 6:
+        print('A senha deve ter no minimo 6 caracteres')
+        return False
+    elif not any(c.isdigit() for c in senha):
+        print('A senha deve conter pelo menos um numero')
+        return False
+    elif not any(c.isalpha() for c in senha):
+        print('A senha deve conter pelo menos uma letra')
+        return False
+    return True
+
+#Aqui ele salva o usuario no arquivo .txt
+def salvar_Usuario(nome, senha):
+    usuario[nome] = senha
+    print('\nUsuario Criado com sucesso!')
+    #Aqui salva o novo usuario no arquivo .txt
+    with open('usuarios.txt', 'a') as arquivo:
+        arquivo.write(f'{nome}:{senha}\n')
+
+#Cadastro de Usuarios
+def cadastro():
+    newCadastro = 's'
+    #Cria um loop de cadastros, sempre perguntando se vai criar um novo cadastro
+    while newCadastro == 's': 
+        print('Vamos criar seu cadastro')
+        userName = input('Crie um nome de usuario: ')
+   
+
+        if userName in usuario:
+            print('\nE esse nome já está Cadastrado')
+        else:
+            while True:
+                print('\ncrie sua senha, (Tem que ter 6 caracteres, sendo letras e numeros!)')
+                userPass = getpass('\nCrie sua senha de usuario: ')
+                #Aqui ele puxa as funçoes para validar no while
+                if validar_senha(userPass):
+                    salvar_Usuario(userName, userPass)
+                    print('\nUsuario criado com sucesso')
+                    break
+
+        print('\nDeseja fazer um novo cadastro?')
+        newCadastro = input('S/N: ').lower()
+        while newCadastro not in ['s','n']:
+            print('Opção invalida, é somente (S) ou (N)')
+            newCadastro = input(' Cria novo cadastro? S/N: ').lower()
+
+def autenticar_usuario(nome, senha):
+    return nome in usuario and senha == usuario[nome]
+    
+#Login de Ususario, com limite de 3 tentativas
+def login(usuario):
+    #Cria um loop de no maximo 3 tentativas
+    tentativas = 0
+    while tentativas < 3:
+        print('\n Bom dia! vamos entrar em sua conta')
+        nome = input('\nInsira seu nome de usuario: ')
+        senha = getpass('\nInsira sua senha: ')
+        # pedir login e senha
+        # verificar
+        if autenticar_usuario(nome, senha):
+            print(f'\nUsuario Logado com sucesso! Seja bem vindo {nome}')
+            return nome
+        else:
+            tentativas += 1
+        print(f"Usuario ou senha incorreto. Tentativa {tentativas}/3")
+
+        if tentativas == 3:
+            print("Conta bloqueada.")
+            return None
+
+
+#Menu principal
+while True:
+    print('\nOlá, o que deseja fazer?')
+    print('1 - Cadastro')
+    print('2 - Login')
+    print('3 - Sair')
+
+    
+    escolha = input('Digite o que ira fazer criar cadastro ou fazer login: ').lower()
+
+    if escolha == '1' or escolha == 'cadastro':
+        cadastro()
+    elif escolha == '2' or escolha == 'login':
+        login(usuario)
+    elif escolha == '3' or escolha == 'sair':
+        print('Ate a Proxima!')
+        break
+    else:
+        print('Escolhas invalidas!')
