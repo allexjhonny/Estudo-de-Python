@@ -1,109 +1,163 @@
 import os
 from getpass import getpass
 
+# Dicionário para armazenar usuários em memória
 usuario = {}
 
-#Carrega os usuarios salvos no arquivo
-try: #Teste de erro, se caso não funcionar, executar o except
-    with open('usuarios.txt', 'r') as arquivo: #aqui abre e lê os arquivos
+# ---------------------- Leitura do arquivo de usuários ----------------------
+try:
+    with open('usuarios.txt', 'r') as arquivo:
         linhas = arquivo.readlines()
         for linha in linhas:
-            nome, senha = linha.strip().split(':')
-            usuario[nome] = senha
-except FileNotFoundError: #aqui é ativado caso não funcione o try
-    with open('usuarios.txt', 'w') as arquivos: # aqui abre e escreve nos arquivos
-        pass
+            linha = linha.strip()
+            if ':' in linha:
+                nome, senha = linha.split(':')
+                usuario[nome] = senha
 
-#Aqui ele verifica se a senha tem todos os requisitos
+except FileNotFoundError:
+    with open('usuarios.txt', 'w') as arquivos:
+        pass  # Cria o arquivo se não existir
+
+# ---------------------- Validação de senha forte ----------------------
 def validar_senha(senha):
-    
     if len(senha) < 6:
-        print('A senha deve ter no minimo 6 caracteres')
+        print('A senha deve ter no mínimo 6 caracteres.')
         return False
     elif not any(c.isdigit() for c in senha):
-        print('A senha deve conter pelo menos um numero')
+        print('A senha deve conter pelo menos um número.')
         return False
     elif not any(c.isalpha() for c in senha):
-        print('A senha deve conter pelo menos uma letra')
+        print('A senha deve conter pelo menos uma letra.')
         return False
     return True
 
-#Aqui ele salva o usuario no arquivo .txt
-def salvar_Usuario(nome, senha):
+# ---------------------- Salvamento de novo usuário ----------------------
+def salvar_usuario(nome, senha):
     usuario[nome] = senha
-    print('\nUsuario Criado com sucesso!')
-    #Aqui salva o novo usuario no arquivo .txt
     with open('usuarios.txt', 'a') as arquivo:
         arquivo.write(f'{nome}:{senha}\n')
+    print('\n✅ Usuário criado com sucesso!')
 
-#Cadastro de Usuarios
+# ---------------------- Cadastro de novos usuários ----------------------
 def cadastro():
     newCadastro = 's'
-    #Cria um loop de cadastros, sempre perguntando se vai criar um novo cadastro
-    while newCadastro == 's': 
-        print('Vamos criar seu cadastro')
-        userName = input('Crie um nome de usuario: ')
-   
+    while newCadastro == 's':
+        print('--- Cadastro de Usuário ---')
+        userName = input('Crie um nome de usuário: ')
 
         if userName in usuario:
-            print('\nE esse nome já está Cadastrado')
+            print('\n❌ Esse nome já está cadastrado.')
         else:
             while True:
-                print('\ncrie sua senha, (Tem que ter 6 caracteres, sendo letras e numeros!)')
-                userPass = getpass('\nCrie sua senha de usuario: ')
-                #Aqui ele puxa as funçoes para validar no while
+                userPass = getpass('Crie sua senha (mínimo 6 caracteres, letras e números): ')
                 if validar_senha(userPass):
-                    salvar_Usuario(userName, userPass)
-                    print('\nUsuario criado com sucesso')
+                    salvar_usuario(userName, userPass)
                     break
 
-        print('\nDeseja fazer um novo cadastro?')
-        newCadastro = input('S/N: ').lower()
-        while newCadastro not in ['s','n']:
-            print('Opção invalida, é somente (S) ou (N)')
-            newCadastro = input(' Cria novo cadastro? S/N: ').lower()
+        newCadastro = input('\nDeseja fazer um novo cadastro? (s/n): ').lower()
+        while newCadastro not in ['s', 'n']:
+            newCadastro = input('Opção inválida. Digite apenas S ou N: ').lower()
 
+# ---------------------- Autenticação de login ----------------------
 def autenticar_usuario(nome, senha):
     return nome in usuario and senha == usuario[nome]
-    
-#Login de Ususario, com limite de 3 tentativas
-def login(usuario):
-    #Cria um loop de no maximo 3 tentativas
+
+# ---------------------- Login de usuário ----------------------
+def login():
     tentativas = 0
     while tentativas < 3:
-        print('\n Bom dia! vamos entrar em sua conta')
-        nome = input('\nInsira seu nome de usuario: ')
-        senha = getpass('\nInsira sua senha: ')
-        # pedir login e senha
-        # verificar
+        print('\n--- Login ---')
+        nome = input('Usuário: ')
+        senha = getpass('Senha: ')
+
         if autenticar_usuario(nome, senha):
-            print(f'\nUsuario Logado com sucesso! Seja bem vindo {nome}')
+            print(f'\n✅ Login bem-sucedido! Bem-vindo(a), {nome}.')
+            menu_lista_de_tarefas(nome)
             return nome
         else:
             tentativas += 1
-        print(f"Usuario ou senha incorreto. Tentativa {tentativas}/3")
+            print(f'❌ Usuário ou senha incorretos. Tentativa {tentativas}/3')
 
-        if tentativas == 3:
-            print("Conta bloqueada.")
-            return None
+    print('\n🚫 Conta bloqueada.')
+    return None
 
+# ---------------------- Menu de tarefas ----------------------
+def menu_lista_de_tarefas(nome):
+    while True:
+        print(f'\n📋 Lista de tarefas de {nome}')
+        print('1 - Ver tarefas')
+        print('2 - Adicionar tarefa')
+        print('3 - Remover tarefa')
+        print('4 - Sair')
 
-#Menu principal
+        op = input('Escolha uma opção: ').lower()
+
+        if op == '1':
+            listar_tarefas(nome)
+        elif op == '2':
+            adicionar_tarefa(nome)
+        elif op == '3':
+            remover_tarefa(nome)
+        elif op == '4':
+            break
+        else:
+            print('Opção inválida!')
+
+# ---------------------- Ver tarefas ----------------------
+def listar_tarefas(nome):
+    try:
+        with open(f'{nome}_tarefas.txt', 'r') as arquivo:
+            tarefas = arquivo.readlines()
+            if not tarefas:
+                print('📭 Nenhuma tarefa encontrada.')
+            else:
+                for i, tarefa in enumerate(tarefas, start=1):
+                    print(f'{i}. {tarefa.strip()}')
+    except FileNotFoundError:
+        print('📭 Nenhuma tarefa ainda.')
+
+# ---------------------- Adicionar tarefa ----------------------
+def adicionar_tarefa(nome):
+    tarefa = input('Digite a nova tarefa: ')
+    with open(f'{nome}_tarefas.txt', 'a') as arquivo:
+        arquivo.write(tarefa + '\n')
+    print('✅ Tarefa adicionada!')
+
+# ---------------------- Remover tarefa ----------------------
+def remover_tarefa(nome):
+    try:
+        with open(f'{nome}_tarefas.txt', 'r') as arquivo:
+            tarefas = arquivo.readlines()
+
+        listar_tarefas(nome)
+        escolha = int(input('Digite o número da tarefa que deseja remover: ')) - 1
+
+        if 0 <= escolha < len(tarefas):
+            removida = tarefas.pop(escolha)
+            with open(f'{nome}_tarefas.txt', 'w') as arquivo:
+                arquivo.writelines(tarefas)
+            print(f'🗑️ Tarefa "{removida.strip()}" removida com sucesso.')
+        else:
+            print('Número inválido.')
+
+    except FileNotFoundError:
+        print('Não há tarefas para remover.')
+
+# ---------------------- Menu principal ----------------------
 while True:
-    print('\nOlá, o que deseja fazer?')
+    print('\n===== MENU PRINCIPAL =====')
     print('1 - Cadastro')
     print('2 - Login')
     print('3 - Sair')
 
-    
-    escolha = input('Digite o que ira fazer criar cadastro ou fazer login: ').lower()
+    escolha = input('Escolha uma opção: ').lower()
 
     if escolha == '1' or escolha == 'cadastro':
         cadastro()
     elif escolha == '2' or escolha == 'login':
-        login(usuario)
+        login()
     elif escolha == '3' or escolha == 'sair':
-        print('Ate a Proxima!')
+        print('👋 Até a próxima!')
         break
     else:
-        print('Escolhas invalidas!')
+        print('❌ Opção inválida.')
